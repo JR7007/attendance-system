@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Employee Dashboard | Client Example</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="min-h-screen bg-gray-100">
+    <!-- Top Navigation Bar -->
+    <nav class="bg-white shadow-sm px-4 py-3 flex items-center justify-between">
+      <div>
+        <h1 class="text-lg font-bold text-gray-800">Client Example</h1>
+        <p class="text-xs text-gray-400">Attendance Management System</p>
+      </div>
+      <button
+        id="logoutBtn"
+        class="bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-lg transition duration-200"
+      >
+        Logout
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-2xl mx-auto p-4 space-y-4">
+      <!-- Welcome Card -->
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h2 id="welcomeName" class="text-2xl font-bold text-gray-800">
+          Welcome! 👋
+        </h2>
+        <p id="employeeInfo" class="text-gray-400 text-sm mt-1">Loading...</p>
+        <div
+          id="statusBadge"
+          class="inline-block mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500"
+        >
+          Checking status...
+        </div>
+      </div>
+
+      <!-- Clock In/Out Card -->
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h3
+          class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4"
+        >
+          Today's Attendance / Kehadiran Hari Ini
+        </h3>
+
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <button
+            id="clockInBtn"
+            class="bg-green-500 hover:bg-green-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-xl transition duration-200 text-sm"
+          >
+            🟢 Clock In / Masuk
+          </button>
+          <button
+            id="clockOutBtn"
+            class="bg-red-500 hover:bg-red-600 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-xl transition duration-200 text-sm"
+          >
+            🔴 Clock Out / Keluar
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 text-center">
+          <div class="bg-green-50 rounded-xl p-3">
+            <p class="text-xs text-gray-400 mb-1">Clock In Time</p>
+            <p id="clockInTime" class="text-lg font-bold text-green-600">
+              --:--
+            </p>
+          </div>
+          <div class="bg-red-50 rounded-xl p-3">
+            <p class="text-xs text-gray-400 mb-1">Clock Out Time</p>
+            <p id="clockOutTime" class="text-lg font-bold text-red-500">
+              --:--
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-blue-50 rounded-xl p-3 mt-4 text-center">
+          <p class="text-xs text-gray-400 mb-1">
+            Total Hours Today / Jumlah Jam
+          </p>
+          <p id="totalHours" class="text-2xl font-bold text-blue-600">
+            00:00:00
+          </p>
+        </div>
+      </div>
+
+      <!-- Success/Error Message -->
+      <div
+        id="messageBox"
+        class="hidden px-4 py-3 rounded-lg text-sm font-medium"
+      ></div>
+
+      <!-- Attendance History Card -->
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <h3
+          class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4"
+        >
+          Attendance History / Rekod Kehadiran
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-gray-400 border-b">
+                <th class="pb-2">Date</th>
+                <th class="pb-2">Clock In</th>
+                <th class="pb-2">Clock Out</th>
+                <th class="pb-2">Hours</th>
+              </tr>
+            </thead>
+            <tbody id="historyTable">
+              <tr>
+                <td colspan="4" class="text-center text-gray-400 py-4">
+                  Loading...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { supabase } from "./js/supabase.js";
+
+      let currentUser = null;
+      let userProfile = null;
+      let todayRecord = null;
+
+      // ── STEP 1: Check if logged in ──
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = "./login.html";
+      }
+      currentUser = session.user;
+
+      // ── STEP 2: Get user profile ──
+      const { data: profile } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", currentUser.id)
+        .single();
+
+      userProfile = profile;
+
+      if (profile.role === "admin") {
+        window.location.href = "./admin.html";
+      }
+
+      // ── STEP 3: Show welcome message ──
+      document.getElementById("welcomeName").textContent =
+        `Welcome, ${profile.full_name}! 👋`;
+      document.getElementById("employeeInfo").textContent =
+        `${profile.employee_id} | ${profile.department || "N/A"}`;
+
+      // ── STEP 4: Load today's attendance ──
+      async function loadTodayAttendance() {
+        const today = new Date().toISOString().split("T")[0];
+
+        const { data: record } = await supabase
+          .from("attendance")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .eq("date", today)
+          .single();
+
+        todayRecord = record;
+        updateUI(record);
+      }
+
+      // ── STEP 5: Update UI ──
+      function updateUI(record) {
+        const clockInBtn = document.getElementById("clockInBtn");
+        const clockOutBtn = document.getElementById("clockOutBtn");
+        const statusBadge = document.getElementById("statusBadge");
+        const clockInTimeEl = document.getElementById("clockInTime");
+        const clockOutTimeEl = document.getElementById("clockOutTime");
+        const totalHoursEl = document.getElementById("totalHours");
+
+        if (!record) {
+          clockInBtn.disabled = false;
+          clockOutBtn.disabled = true;
+          statusBadge.textContent = "⚪ Not Clocked In";
+          statusBadge.className =
+            "inline-block mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500";
+          clockInTimeEl.textContent = "--:--";
+          clockOutTimeEl.textContent = "--:--";
+          totalHoursEl.textContent = "00:00:00";
+        } else if (record.clock_in_time && !record.clock_out_time) {
+          clockInBtn.disabled = true;
+          clockOutBtn.disabled = false;
+          statusBadge.textContent = "🟢 Currently Working";
+          statusBadge.className =
+            "inline-block mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-600";
+          clockInTimeEl.textContent = formatTime(record.clock_in_time);
+          clockOutTimeEl.textContent = "--:--";
+          totalHoursEl.textContent = "00:00:00";
+        } else if (record.clock_in_time && record.clock_out_time) {
+          clockInBtn.disabled = true;
+          clockOutBtn.disabled = true;
+          statusBadge.textContent = "✅ Done for Today";
+          statusBadge.className =
+            "inline-block mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-600";
+          clockInTimeEl.textContent = formatTime(record.clock_in_time);
+          clockOutTimeEl.textContent = formatTime(record.clock_out_time);
+          totalHoursEl.textContent = decimalToHMS(record.total_hours);
+        }
+      }
+
+      // ── STEP 6: Clock In ──
+      document
+        .getElementById("clockInBtn")
+        .addEventListener("click", async function () {
+          this.textContent = "Clocking in...";
+          this.disabled = true;
+
+          const today = new Date().toISOString().split("T")[0];
+          const now = new Date().toISOString();
+
+          const { error } = await supabase.from("attendance").insert({
+            user_id: currentUser.id,
+            date: today,
+            clock_in_time: now,
+            status: "present",
+          });
+
+          if (error) {
+            showMessage("Failed to clock in. Please try again.", "error");
+            this.textContent = "🟢 Clock In / Masuk";
+            this.disabled = false;
+            return;
+          }
+
+          showMessage("✅ Clocked in successfully!", "success");
+          await loadTodayAttendance();
+          await loadHistory();
+        });
+
+      // ── STEP 7: Clock Out ──
+      document
+        .getElementById("clockOutBtn")
+        .addEventListener("click", async function () {
+          this.textContent = "Clocking out...";
+          this.disabled = true;
+
+          const now = new Date();
+          const clockInTime = new Date(todayRecord.clock_in_time);
+
+          const diffMs = now - clockInTime;
+          const diffSecs = Math.floor(diffMs / 1000);
+          const hours = Math.floor(diffSecs / 3600);
+          const minutes = Math.floor((diffSecs % 3600) / 60);
+          const seconds = diffSecs % 60;
+          const totalHoursDecimal = parseFloat(
+            (diffMs / 1000 / 60 / 60).toFixed(2),
+          );
+
+          const { error } = await supabase
+            .from("attendance")
+            .update({
+              clock_out_time: now.toISOString(),
+              total_hours: totalHoursDecimal,
+            })
+            .eq("id", todayRecord.id);
+
+          if (error) {
+            showMessage("Failed to clock out. Please try again.", "error");
+            this.textContent = "🔴 Clock Out / Keluar";
+            this.disabled = false;
+            return;
+          }
+
+          showMessage("✅ Clocked out successfully!", "success");
+          await loadTodayAttendance();
+          await loadHistory();
+        });
+
+      // ── STEP 8: Load history ──
+      async function loadHistory() {
+        const { data: records } = await supabase
+          .from("attendance")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .order("date", { ascending: false })
+          .limit(10);
+
+        const tbody = document.getElementById("historyTable");
+
+        if (!records || records.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-4">No records yet</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = records
+          .map(
+            (r) => `
+          <tr class="border-b last:border-0 hover:bg-gray-50">
+            <td class="py-3 text-gray-700">${formatDate(r.date)}</td>
+            <td class="py-3 text-green-600 font-medium">${r.clock_in_time ? formatTime(r.clock_in_time) : "--"}</td>
+            <td class="py-3 text-red-500 font-medium">${r.clock_out_time ? formatTime(r.clock_out_time) : "--"}</td>
+            <td class="py-3 text-blue-600 font-medium">${r.total_hours ? decimalToHMS(r.total_hours) : "--"}</td>
+          </tr>
+        `,
+          )
+          .join("");
+      }
+
+      // ── STEP 9: Logout ──
+      document
+        .getElementById("logoutBtn")
+        .addEventListener("click", async function () {
+          await supabase.auth.signOut();
+          window.location.href = "./login.html";
+        });
+
+      // ── HELPER: Decimal hours to HH:MM:SS ──
+      function decimalToHMS(decimal) {
+        const totalSeconds = Math.floor(decimal * 3600);
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+      }
+
+      // ── HELPER: Format time ──
+      function formatTime(isoString) {
+        return new Date(isoString).toLocaleTimeString("en-MY", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+      }
+
+      // ── HELPER: Format date ──
+      function formatDate(dateString) {
+        return new Date(dateString).toLocaleDateString("en-MY", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      }
+
+      // ── HELPER: Show message ──
+      function showMessage(text, type) {
+        const box = document.getElementById("messageBox");
+        box.textContent = text;
+        box.className =
+          type === "success"
+            ? "px-4 py-3 rounded-lg text-sm font-medium bg-green-100 text-green-700"
+            : "px-4 py-3 rounded-lg text-sm font-medium bg-red-100 text-red-700";
+        setTimeout(() => box.classList.add("hidden"), 4000);
+      }
+
+      // ── INIT ──
+      await loadTodayAttendance();
+      await loadHistory();
+    </script>
+  </body>
+</html>
