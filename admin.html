@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard | Client Example</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="min-h-screen bg-gray-100">
+    <!-- Top Navigation Bar -->
+    <nav class="bg-white shadow-sm px-4 py-3 flex items-center justify-between">
+      <div>
+        <h1 class="text-lg font-bold text-gray-800">Client Example</h1>
+        <p class="text-xs text-gray-400">Admin Dashboard</p>
+      </div>
+      <button
+        id="logoutBtn"
+        class="bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 rounded-lg transition duration-200"
+      >
+        Logout
+      </button>
+    </nav>
+
+    <!-- Tab Navigation -->
+    <div class="bg-white border-b px-4">
+      <div class="max-w-6xl mx-auto flex space-x-1">
+        <button
+          onclick="switchTab('employees')"
+          id="tab-employees"
+          class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-blue-600 text-blue-600"
+        >
+          👥 Employees
+        </button>
+        <button
+          onclick="switchTab('attendance')"
+          id="tab-attendance"
+          class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+        >
+          📋 Attendance
+        </button>
+        <button
+          onclick="switchTab('live')"
+          id="tab-live"
+          class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+        >
+          🟢 Live Status
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto p-4">
+      <!-- Message Box -->
+      <div
+        id="messageBox"
+        class="hidden px-4 py-3 rounded-lg text-sm font-medium mb-4"
+      ></div>
+
+      <!-- ── TAB 1: EMPLOYEES ── -->
+      <div id="section-employees">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold text-gray-800">Employee Management</h2>
+          <button
+            onclick="openAddModal()"
+            class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition duration-200"
+          >
+            + Add Employee
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 border-b">
+                <tr class="text-left text-gray-500">
+                  <th class="px-4 py-3">Employee ID</th>
+                  <th class="px-4 py-3">Name</th>
+                  <th class="px-4 py-3">Email</th>
+                  <th class="px-4 py-3">Department</th>
+                  <th class="px-4 py-3">Type</th>
+                  <th class="px-4 py-3">Role</th>
+                  <th class="px-4 py-3">Status</th>
+                  <th class="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="employeesTable">
+                <tr>
+                  <td colspan="8" class="text-center text-gray-400 py-6">
+                    Loading...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB 2: ATTENDANCE ── -->
+      <div id="section-attendance" class="hidden">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">Attendance Records</h2>
+
+        <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1"
+                >Filter by Employee</label
+              >
+              <select
+                id="filterEmployee"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Employees</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1"
+                >Filter by Date</label
+              >
+              <input
+                type="date"
+                id="filterDate"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div class="flex items-end">
+              <button
+                onclick="loadAttendance()"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition duration-200"
+              >
+                🔍 Filter
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 border-b">
+                <tr class="text-left text-gray-500">
+                  <th class="px-4 py-3">Employee</th>
+                  <th class="px-4 py-3">Date</th>
+                  <th class="px-4 py-3">Clock In</th>
+                  <th class="px-4 py-3">Clock Out</th>
+                  <th class="px-4 py-3">Hours</th>
+                  <th class="px-4 py-3">Status</th>
+                  <th class="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceTable">
+                <tr>
+                  <td colspan="7" class="text-center text-gray-400 py-6">
+                    Loading...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TAB 3: LIVE STATUS ── -->
+      <div id="section-live" class="hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold text-gray-800">
+            🟢 Currently Clocked In
+          </h2>
+          <button
+            onclick="loadLiveStatus()"
+            class="bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded-lg transition duration-200"
+          >
+            🔄 Refresh
+          </button>
+        </div>
+
+        <div
+          id="liveGrid"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
+          <p class="text-gray-400 text-sm">Loading...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ADD EMPLOYEE MODAL ── -->
+    <div
+      id="addModal"
+      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-screen overflow-y-auto"
+      >
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Add New Employee</h3>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Employee ID</label>
+            <input
+              type="text"
+              id="add_employee_id"
+              placeholder="e.g. EMP002"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Full Name</label>
+            <input
+              type="text"
+              id="add_full_name"
+              placeholder="e.g. Siti Binti Ahmad"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Email</label>
+            <input
+              type="email"
+              id="add_email"
+              placeholder="e.g. siti@company.com"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Password</label>
+            <input
+              type="password"
+              id="add_password"
+              placeholder="Create a password"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Department</label>
+            <input
+              type="text"
+              id="add_department"
+              placeholder="e.g. Operations"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Role</label>
+            <select
+              id="add_role"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="employee">Employee</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1"
+              >Employment Type</label
+            >
+            <select
+              id="add_employment_type"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="full_time">Full Time</option>
+              <option value="part_time">Part Time</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-3 mt-5">
+          <button
+            onclick="closeAddModal()"
+            class="flex-1 border border-gray-300 text-gray-700 text-sm py-2 rounded-lg hover:bg-gray-50 transition duration-200"
+          >
+            Cancel
+          </button>
+          <button
+            onclick="addEmployee()"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 rounded-lg transition duration-200"
+          >
+            Add Employee
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EDIT EMPLOYEE MODAL ── -->
+    <div
+      id="editModal"
+      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-screen overflow-y-auto"
+      >
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Edit Employee</h3>
+
+        <input type="hidden" id="edit_id" />
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Employee ID</label>
+            <input
+              type="text"
+              id="edit_employee_id"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Full Name</label>
+            <input
+              type="text"
+              id="edit_full_name"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Department</label>
+            <input
+              type="text"
+              id="edit_department"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Role</label>
+            <select
+              id="edit_role"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="employee">Employee</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1"
+              >Employment Type</label
+            >
+            <select
+              id="edit_employment_type"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="full_time">Full Time</option>
+              <option value="part_time">Part Time</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Status</label>
+            <select
+              id="edit_is_active"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-3 mt-5">
+          <button
+            onclick="closeEditModal()"
+            class="flex-1 border border-gray-300 text-gray-700 text-sm py-2 rounded-lg hover:bg-gray-50 transition duration-200"
+          >
+            Cancel
+          </button>
+          <button
+            onclick="saveEmployee()"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 rounded-lg transition duration-200"
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EDIT ATTENDANCE MODAL ── -->
+    <div
+      id="editAttModal"
+      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+    >
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">
+          Edit Attendance Record
+        </h3>
+
+        <input type="hidden" id="editAtt_id" />
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs text-gray-500 mb-1"
+              >Clock In Time</label
+            >
+            <input
+              type="datetime-local"
+              id="editAtt_clock_in"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1"
+              >Clock Out Time</label
+            >
+            <input
+              type="datetime-local"
+              id="editAtt_clock_out"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1">Notes</label>
+            <input
+              type="text"
+              id="editAtt_notes"
+              placeholder="e.g. Forgot to clock out"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <div class="flex gap-3 mt-5">
+          <button
+            onclick="closeEditAttModal()"
+            class="flex-1 border border-gray-300 text-gray-700 text-sm py-2 rounded-lg hover:bg-gray-50 transition duration-200"
+          >
+            Cancel
+          </button>
+          <button
+            onclick="saveAttendance()"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 rounded-lg transition duration-200"
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { supabase } from "./js/supabase.js";
+
+      // ── STEP 1: Check if logged in and is admin ──
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = "./login.html";
+      }
+
+      const { data: profile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile?.role !== "admin") {
+        window.location.href = "./employee.html";
+      }
+
+      // ── STEP 2: Tab switching ──
+      window.switchTab = function (tab) {
+        document.getElementById("section-employees").classList.add("hidden");
+        document.getElementById("section-attendance").classList.add("hidden");
+        document.getElementById("section-live").classList.add("hidden");
+
+        document.getElementById("tab-employees").className =
+          "tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700";
+        document.getElementById("tab-attendance").className =
+          "tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700";
+        document.getElementById("tab-live").className =
+          "tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700";
+
+        document.getElementById(`section-${tab}`).classList.remove("hidden");
+        document.getElementById(`tab-${tab}`).className =
+          "tab-btn px-4 py-3 text-sm font-medium border-b-2 border-blue-600 text-blue-600";
+
+        if (tab === "attendance") loadAttendance();
+        if (tab === "live") loadLiveStatus();
+      };
+
+      // ── STEP 3: Load all employees ──
+      async function loadEmployees() {
+        const { data: employees } = await supabase
+          .from("users")
+          .select("*")
+          .order("employee_id", { ascending: true });
+
+        const tbody = document.getElementById("employeesTable");
+
+        if (!employees || employees.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="text-center text-gray-400 py-6">No employees found</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = employees
+          .map(
+            (e) => `
+          <tr class="border-b last:border-0 hover:bg-gray-50">
+            <td class="px-4 py-3 font-medium text-gray-700">${e.employee_id}</td>
+            <td class="px-4 py-3 text-gray-700">${e.full_name}</td>
+            <td class="px-4 py-3 text-gray-500">${e.email}</td>
+            <td class="px-4 py-3 text-gray-500">${e.department || "-"}</td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-full text-xs font-medium ${e.employment_type === "part_time" ? "bg-yellow-100 text-yellow-600" : "bg-blue-100 text-blue-600"}">
+                ${e.employment_type === "part_time" ? "Part Time" : "Full Time"}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-full text-xs font-medium ${e.role === "admin" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"}">
+                ${e.role}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-full text-xs font-medium ${e.is_active ? "bg-green-100 text-green-600" : "bg-red-100 text-red-500"}">
+                ${e.is_active ? "Active" : "Inactive"}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex gap-2">
+                <button onclick="openEditModal('${e.id}','${e.employee_id}','${e.full_name}','${e.department || ""}','${e.role}','${e.is_active}','${e.employment_type || "full_time"}')"
+                  class="text-blue-600 hover:text-blue-800 text-xs font-medium">Edit</button>
+                <button onclick="deleteEmployee('${e.id}','${e.full_name}')"
+                  class="text-red-500 hover:text-red-700 text-xs font-medium">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `,
+          )
+          .join("");
+
+        // Populate employee filter dropdown
+        const filterSelect = document.getElementById("filterEmployee");
+        filterSelect.innerHTML = '<option value="">All Employees</option>';
+        employees.forEach((e) => {
+          filterSelect.innerHTML += `<option value="${e.id}">${e.full_name} (${e.employee_id})</option>`;
+        });
+      }
+
+      // ── STEP 4: Add Employee Modal ──
+      window.openAddModal = function () {
+        document.getElementById("addModal").classList.remove("hidden");
+      };
+
+      window.closeAddModal = function () {
+        document.getElementById("addModal").classList.add("hidden");
+        document.getElementById("add_employee_id").value = "";
+        document.getElementById("add_full_name").value = "";
+        document.getElementById("add_email").value = "";
+        document.getElementById("add_password").value = "";
+        document.getElementById("add_department").value = "";
+        document.getElementById("add_role").value = "employee";
+        document.getElementById("add_employment_type").value = "full_time";
+      };
+
+      window.addEmployee = async function () {
+        const employee_id = document
+          .getElementById("add_employee_id")
+          .value.trim();
+        const full_name = document.getElementById("add_full_name").value.trim();
+        const email = document.getElementById("add_email").value.trim();
+        const password = document.getElementById("add_password").value.trim();
+        const department = document
+          .getElementById("add_department")
+          .value.trim();
+        const role = document.getElementById("add_role").value;
+        const employment_type = document.getElementById(
+          "add_employment_type",
+        ).value;
+
+        if (!employee_id || !full_name || !email || !password) {
+          showMessage("Please fill in all required fields.", "error");
+          return;
+        }
+
+        const { data: authData, error: authError } = await supabase.auth.signUp(
+          {
+            email,
+            password,
+          },
+        );
+
+        if (authError) {
+          showMessage(`Error: ${authError.message}`, "error");
+          return;
+        }
+
+        const { error: dbError } = await supabase.from("users").insert({
+          id: authData.user.id,
+          employee_id,
+          full_name,
+          email,
+          role,
+          department,
+          employment_type,
+        });
+
+        if (dbError) {
+          showMessage(`Error: ${dbError.message}`, "error");
+          return;
+        }
+
+        showMessage(`✅ Employee ${full_name} added successfully!`, "success");
+        closeAddModal();
+        await loadEmployees();
+      };
+
+      // ── STEP 5: Edit Employee ──
+      window.openEditModal = function (
+        id,
+        employee_id,
+        full_name,
+        department,
+        role,
+        is_active,
+        employment_type,
+      ) {
+        document.getElementById("edit_id").value = id;
+        document.getElementById("edit_employee_id").value = employee_id;
+        document.getElementById("edit_full_name").value = full_name;
+        document.getElementById("edit_department").value = department;
+        document.getElementById("edit_role").value = role;
+        document.getElementById("edit_is_active").value = is_active;
+        document.getElementById("edit_employment_type").value =
+          employment_type || "full_time";
+        document.getElementById("editModal").classList.remove("hidden");
+      };
+
+      window.closeEditModal = function () {
+        document.getElementById("editModal").classList.add("hidden");
+      };
+
+      window.saveEmployee = async function () {
+        const id = document.getElementById("edit_id").value;
+        const employee_id = document
+          .getElementById("edit_employee_id")
+          .value.trim();
+        const full_name = document
+          .getElementById("edit_full_name")
+          .value.trim();
+        const department = document
+          .getElementById("edit_department")
+          .value.trim();
+        const role = document.getElementById("edit_role").value;
+        const is_active =
+          document.getElementById("edit_is_active").value === "true";
+        const employment_type = document.getElementById(
+          "edit_employment_type",
+        ).value;
+
+        const { error } = await supabase
+          .from("users")
+          .update({
+            employee_id,
+            full_name,
+            department,
+            role,
+            is_active,
+            employment_type,
+          })
+          .eq("id", id);
+
+        if (error) {
+          showMessage(`Error: ${error.message}`, "error");
+          return;
+        }
+
+        showMessage("✅ Employee updated successfully!", "success");
+        closeEditModal();
+        await loadEmployees();
+      };
+
+      // ── STEP 6: Delete Employee ──
+      window.deleteEmployee = async function (id, name) {
+        if (
+          !confirm(
+            `Are you sure you want to delete ${name}? This will also delete all their attendance records.`,
+          )
+        )
+          return;
+
+        const { error } = await supabase.from("users").delete().eq("id", id);
+
+        if (error) {
+          showMessage(`Error: ${error.message}`, "error");
+          return;
+        }
+
+        showMessage("✅ Employee deleted successfully.", "success");
+        await loadEmployees();
+      };
+
+      // ── STEP 7: Load Attendance ──
+      window.loadAttendance = async function () {
+        const filterEmployee = document.getElementById("filterEmployee").value;
+        const filterDate = document.getElementById("filterDate").value;
+
+        let query = supabase
+          .from("attendance")
+          .select("*, users(full_name, employee_id)")
+          .order("date", { ascending: false })
+          .limit(50);
+
+        if (filterEmployee) query = query.eq("user_id", filterEmployee);
+        if (filterDate) query = query.eq("date", filterDate);
+
+        const { data: records } = await query;
+
+        const tbody = document.getElementById("attendanceTable");
+
+        if (!records || records.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center text-gray-400 py-6">No records found</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = records
+          .map(
+            (r) => `
+          <tr class="border-b last:border-0 hover:bg-gray-50">
+            <td class="px-4 py-3 text-gray-700">${r.users?.full_name || "-"} <span class="text-gray-400 text-xs">(${r.users?.employee_id || "-"})</span></td>
+            <td class="px-4 py-3 text-gray-700">${formatDate(r.date)}</td>
+            <td class="px-4 py-3 text-green-600">${r.clock_in_time ? formatTime(r.clock_in_time) : "--"}</td>
+            <td class="px-4 py-3 text-red-500">${r.clock_out_time ? formatTime(r.clock_out_time) : "--"}</td>
+            <td class="px-4 py-3 text-blue-600">${r.total_hours ? decimalToHMS(r.total_hours) : "--"}</td>
+            <td class="px-4 py-3">
+              <span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600">${r.status}</span>
+            </td>
+            <td class="px-4 py-3">
+              <button onclick="openEditAttModal('${r.id}','${r.clock_in_time || ""}','${r.clock_out_time || ""}','${r.notes || ""}')"
+                class="text-blue-600 hover:text-blue-800 text-xs font-medium">Edit</button>
+            </td>
+          </tr>
+        `,
+          )
+          .join("");
+      };
+
+      // ── STEP 8: Edit Attendance ──
+      window.openEditAttModal = function (id, clock_in, clock_out, notes) {
+        document.getElementById("editAtt_id").value = id;
+        document.getElementById("editAtt_clock_in").value = clock_in
+          ? clock_in.slice(0, 16)
+          : "";
+        document.getElementById("editAtt_clock_out").value = clock_out
+          ? clock_out.slice(0, 16)
+          : "";
+        document.getElementById("editAtt_notes").value = notes;
+        document.getElementById("editAttModal").classList.remove("hidden");
+      };
+
+      window.closeEditAttModal = function () {
+        document.getElementById("editAttModal").classList.add("hidden");
+      };
+
+      window.saveAttendance = async function () {
+        const id = document.getElementById("editAtt_id").value;
+        const clock_in = document.getElementById("editAtt_clock_in").value;
+        const clock_out = document.getElementById("editAtt_clock_out").value;
+        const notes = document.getElementById("editAtt_notes").value;
+
+        let total_hours = null;
+        if (clock_in && clock_out) {
+          const diff = new Date(clock_out) - new Date(clock_in);
+          total_hours = parseFloat((diff / 1000 / 60 / 60).toFixed(2));
+        }
+
+        const { error } = await supabase
+          .from("attendance")
+          .update({
+            clock_in_time: clock_in || null,
+            clock_out_time: clock_out || null,
+            total_hours,
+            notes,
+          })
+          .eq("id", id);
+
+        if (error) {
+          showMessage(`Error: ${error.message}`, "error");
+          return;
+        }
+
+        showMessage("✅ Attendance record updated!", "success");
+        closeEditAttModal();
+        await loadAttendance();
+      };
+
+      // ── STEP 9: Live Status ──
+      window.loadLiveStatus = async function () {
+        const today = new Date().toISOString().split("T")[0];
+
+        const { data: records } = await supabase
+          .from("attendance")
+          .select("*, users(full_name, employee_id, department)")
+          .eq("date", today)
+          .is("clock_out_time", null)
+          .not("clock_in_time", "is", null);
+
+        const grid = document.getElementById("liveGrid");
+
+        if (!records || records.length === 0) {
+          grid.innerHTML = `<p class="text-gray-400 text-sm col-span-3">No employees currently clocked in.</p>`;
+          return;
+        }
+
+        grid.innerHTML = records
+          .map(
+            (r) => `
+          <div class="bg-white rounded-2xl shadow-sm p-4 border-l-4 border-green-500">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold text-sm">
+                ${r.users?.full_name?.charAt(0) || "?"}
+              </div>
+              <div>
+                <p class="font-semibold text-gray-800 text-sm">${r.users?.full_name || "-"}</p>
+                <p class="text-xs text-gray-400">${r.users?.employee_id || "-"} | ${r.users?.department || "-"}</p>
+              </div>
+            </div>
+            <div class="mt-3 text-xs text-gray-500">
+              🟢 Clocked in at <span class="font-medium text-green-600">${formatTime(r.clock_in_time)}</span>
+            </div>
+          </div>
+        `,
+          )
+          .join("");
+      };
+
+      // ── STEP 10: Logout ──
+      document
+        .getElementById("logoutBtn")
+        .addEventListener("click", async function () {
+          await supabase.auth.signOut();
+          window.location.href = "./login.html";
+        });
+
+      // ── HELPERS ──
+      function decimalToHMS(decimal) {
+        const totalSeconds = Math.floor(decimal * 3600);
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+      }
+
+      function formatTime(isoString) {
+        return new Date(isoString).toLocaleTimeString("en-MY", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+      }
+
+      function formatDate(dateString) {
+        return new Date(dateString).toLocaleDateString("en-MY", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      }
+
+      function showMessage(text, type) {
+        const box = document.getElementById("messageBox");
+        box.textContent = text;
+        box.className =
+          type === "success"
+            ? "px-4 py-3 rounded-lg text-sm font-medium bg-green-100 text-green-700 mb-4"
+            : "px-4 py-3 rounded-lg text-sm font-medium bg-red-100 text-red-700 mb-4";
+        setTimeout(() => box.classList.add("hidden"), 4000);
+      }
+
+      // ── INIT ──
+      await loadEmployees();
+    </script>
+  </body>
+</html>
